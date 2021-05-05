@@ -76,14 +76,16 @@ def add_pseudo_counts(frequency_matrix, low_frequency=0.1):
     >>> add_pseudo_counts({'A': [1.0, 0.0], 'T': [0.0, 0.5], 'C': [0.0, 0.5], 'G': [0.0, 0.0]})
     {'A': [1.0, 0.1], 'T': [0.1, 0.5], 'C': [0.1, 0.5], 'G': [0.1, 0.1]}
     """
-    pseudo_matrix = dict()
-    for base, occurances in frequency_matrix.items():
-        # TODO: Substract from other numbers, so sum for each position is still 1
-        # zero_count = sum(map(lambda i: i == 0, occurances))
-        # nonzero_count = len(BASES)-zero_count
-        # diff = (zero_count * low_frequency) / nonzero_count
-        # pseudo_matrix[base] = [low_frequency if i == 0 else i for i in occurances]
-        pseudo_matrix[base] = [low_frequency if i == 0 else i for i in occurances]
+    motif_length = len(frequency_matrix[BASES[0]])
+    pseudo_matrix = {base: [0] * motif_length for base in BASES}
+    for i in range(motif_length):
+        position_frequencies = [frequency_matrix[base][i] for base in BASES]
+        zero_count = sum(map(lambda i: i == 0, position_frequencies))
+        nonzero_count = len(BASES) - zero_count
+        diff = (zero_count * low_frequency) / nonzero_count
+        for base in BASES:
+            base_frequency = frequency_matrix[base][i]
+            pseudo_matrix[base][i] = low_frequency if base_frequency == 0 else base_frequency - diff
     return pseudo_matrix
 
 
