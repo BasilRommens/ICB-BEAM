@@ -99,6 +99,25 @@ def gibbs_sample(instances, motif_length):
     return get_motifs(motif_positions, instances, motif_length)
 
 
+def most_occuring(item_list):
+    return max(item_list, key=item_list.count)
+
+
+def best_of_gibbs(instances, motif_length, num_iterations=10):
+    """
+    Runs gibbs_sample multiple times and returns the most occuring solution
+    :param num_iterations: Times to run gibbs_sample
+    # Note: Test still possible to fail because gibbs is random based, but low chance
+    >>> best_of_gibbs(["CGTAC", "GTCCC", "AAGGT", "GCTGT"], 2)
+    ['GT', 'GT', 'GT', 'GT']
+    """
+    gibs_results = []
+    for i in range(num_iterations):
+        gibbs_result = gibbs_sample(instances, motif_length)
+        gibs_results.append(gibbs_result)
+    return most_occuring(gibs_results)
+
+
 if __name__ == '__main__':
     from pprint import pprint
 
@@ -107,7 +126,7 @@ if __name__ == '__main__':
                  "CCACGTGGTTAGTGGCAACCTGGTGACCCCCCTTCCTGTGATTTTTACAAATAGAGCAGCCGGCATCGTT",
                  "GGAGAGTGTTTTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
                  "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGGATAAGGAAACCAAGGCAATGAG"]
-    motif_instances = gibbs_sample(instances, 8)
+    motif_instances = best_of_gibbs(instances, 8)
     pprint(motif_instances)
 
     frequency_matrix = get_frequency_matrix(motif_instances)
