@@ -15,6 +15,8 @@ def instances_to_count_matrix(instances):
     >>> instances_to_count_matrix(["ACC", "ATG"])
     {'A': [2, 0, 0], 'T': [0, 1, 0], 'C': [0, 1, 1], 'G': [0, 0, 1]}
     """
+    assert not any(len(instances[0]) != len(i) for i in instances)
+
     motif_length = len(instances[0])
     count_matrix = {base: [0] * motif_length for base in BASES}
     for instance in instances:
@@ -72,9 +74,9 @@ def score_pssm_log(string, log_matrix):
 
 def add_pseudo_counts(frequency_matrix, low_frequency=0.1):
     """
-    Replaces all zeros with a low frequency
+    Replaces all zeros with a low frequency. Sum per position stays 1.
     >>> add_pseudo_counts({'A': [1.0, 0.0], 'T': [0.0, 0.5], 'C': [0.0, 0.5], 'G': [0.0, 0.0]})
-    {'A': [1.0, 0.1], 'T': [0.1, 0.5], 'C': [0.1, 0.5], 'G': [0.1, 0.1]}
+    {'A': [0.7, 0.1], 'T': [0.1, 0.4], 'C': [0.1, 0.4], 'G': [0.1, 0.1]}
     """
     motif_length = len(frequency_matrix[BASES[0]])
     pseudo_matrix = {base: [0] * motif_length for base in BASES}
@@ -101,11 +103,16 @@ def freq_to_log_matrix(frequency_matrix):
 
 
 def get_scoring_matrix(instances):
-    count_matrix = instances_to_count_matrix(instances)
-    frequency_matrix = count_to_frequency_matrix(count_matrix)
+    frequency_matrix = get_frequency_matrix(instances)
     pseudo_matrix = add_pseudo_counts(frequency_matrix)
     log_matrix = freq_to_log_matrix(pseudo_matrix)
     return log_matrix
+
+
+def get_frequency_matrix(instances):
+    count_matrix = instances_to_count_matrix(instances)
+    frequency_matrix = count_to_frequency_matrix(count_matrix)
+    return frequency_matrix
 
 
 if __name__ == '__main__':
