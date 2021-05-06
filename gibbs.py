@@ -1,6 +1,6 @@
 # Implementation of the gibbs sampling algorithm
-# Based on presentation of Pieter and https://www.cs.cmu.edu/~ckingsf/bioinfo-lectures/gibbs.pdf
 from random import randint
+from copy import copy
 from scoring import get_scoring_matrix, score_pssm_log, get_frequency_matrix
 
 
@@ -88,17 +88,13 @@ def gibbs_sample(instances, motif_length):
 
     while positions_changed:
         # print("Iteration")
-        positions_changed = False
+        old_positions = copy(motif_positions)
 
         for i in range(len(instances)):
             new_position = get_new_position(i, motif_positions, instances, motif_length)
-
-            # Check whether the new_position is different from the old_position
-            old_position = motif_positions[i]
-            current_position_changed = old_position != new_position
-            positions_changed = positions_changed or current_position_changed
-
             motif_positions[i] = new_position
+
+        positions_changed = old_positions != motif_positions
 
     return get_motifs(motif_positions, instances, motif_length)
 
