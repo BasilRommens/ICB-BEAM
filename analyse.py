@@ -13,7 +13,7 @@ def get_performance(func, *args, **kwargs):
     time_elapsed = (time.perf_counter() - time_start)
     memMb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0 / 1024.0
 
-    return memMb, time_elapsed
+    return time_elapsed, memMb
 
 
 if __name__ == '__main__':
