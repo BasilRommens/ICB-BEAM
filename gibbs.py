@@ -77,10 +77,8 @@ def gibbs_sample(instances, motif_length):
     # >>> gibbs_sample(["CGTAC", "GTCCC", "AAGGT", "GCTGT"], 2)
     # ['GT', 'GT', 'GT', 'GT']
     """
-    instance_length = len(instances[0])
-
     # Random start positions in the dna string for each instance
-    motif_positions = [randint(0, instance_length - motif_length) for instance in instances]
+    motif_positions = [randint(0, len(instance) - motif_length) for instance in instances]
     # print(f"Start positions: {motif_positions}")  # for debugging
 
     # Bool whether the position has been changed somewhere in the algorithm
