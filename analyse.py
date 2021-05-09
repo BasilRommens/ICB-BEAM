@@ -1,10 +1,11 @@
 # Compares the performance of gibbs with exmin
-import time
 import resource
+import time
+
 import numpy
 
 from gibbs import gibbs_sample, best_of_gibbs
-from scoring import get_motifs_score, get_total_motifs_score
+from scoring import get_motifs_score, get_total_motifs_score, get_frequency_matrix, score_sum
 
 
 def get_value(value: tuple):
@@ -62,6 +63,56 @@ def get_sd(motifs_score):
     return numpy.std(list(motifs_score.values()))
 
 
+def get_relative_performance(_performance_dict, motifs):
+    """
+    This function will use the motifs that where found during
+    the motif finding algorithm, and generates data about it
+    :param: _performance_dict: The performance dict that needs to be filled with new
+    :param: motifs: The motifs from the generated solution, will be compared with
+    each other
+    :returns: The dict filled with data about the performance relative to the
+    motifs that were found
+    """
+    _performance_dict['The motifs scores'] = motifs_score = get_motifs_score(motifs)
+    _performance_dict['Total of all the motifs score'] = get_total_motifs_score(motifs)
+    minimum, maximum = get_min_max_motifs(motifs_score)
+    _performance_dict['Minimum motif score'] = minimum
+    _performance_dict['Maximum motif score'] = maximum
+    _performance_dict['Average of all the motif scores'] = get_avg(motifs_score)
+    _performance_dict['Standard deviation of all the motif scores'] = get_sd(motifs_score)
+    _performance_dict['Median of all the motif scores'] = get_median(motifs_score)
+    return _performance_dict
+
+
+def get_solution_relative_performance(_performance_dict, motifs, solution):
+    """
+    This function will use an effective solution to generate similarity data
+    on the solution given by the performance dict
+    :param: _performance_dict: The performance dict that needs to be filled with new
+    data
+    :param: motifs: The motifs from the generated solution, will be compared
+    agains a real solution
+    :param: solution: This is the real motif in all the DNA-sequences
+    :returns: The dict filled with data about the performance relative to the solution
+    """
+    # generate the matrix on which we'll perform some basic statistics
+    scoring_matrix = get_frequency_matrix([solution])
+    motifs_dict = dict()
+    for motif in motifs:
+        motifs_dict[motif] = score_sum(motif, scoring_matrix)
+    _performance_dict['\033[96mOptimal:\033[0m\033[32;1m The motifs scores'] = motifs_dict
+    _performance_dict['\033[96mOptimal:\033[0m\033[32;1m Total of all the motifs score'] = sum(
+        list(motifs_dict.values()))
+    minimum, maximum = get_min_max_motifs(motifs_dict)
+    _performance_dict['\033[96mOptimal:\033[0m\033[32;1m Minimum motif score'] = minimum
+    _performance_dict['\033[96mOptimal:\033[0m\033[32;1m Maximum motif score'] = maximum
+    _performance_dict['\033[96mOptimal:\033[0m\033[32;1m Average of all the motif scores'] = get_avg(motifs_dict)
+    _performance_dict['\033[96mOptimal:\033[0m\033[32;1m Standard deviation of all the motif scores'] = get_sd(
+        motifs_dict)
+    _performance_dict['\033[96mOptimal:\033[0m\033[32;1m Median of all the motif scores'] = get_median(motifs_dict)
+    return _performance_dict
+
+
 def get_performance(solution, func, *args, **kwargs) -> dict:
     """
     Will return a bunch of statistics about the found solution. Among these statistics are: time elapsed, memory usage,
@@ -77,15 +128,12 @@ def get_performance(solution, func, *args, **kwargs) -> dict:
     performance_dict['Memory used (Mb)'] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0 / 1024.0
 
     # This part is when we do not have a solution
-    performance_dict['The motifs scores'] = motifs_score = get_motifs_score(motifs)
-    performance_dict['Total of all the motifs score'] = get_total_motifs_score(motifs)
-    minimum, maximum = get_min_max_motifs(motifs_score)
-    performance_dict['Minimum motif score'] = minimum
-    performance_dict['Maximum motif score'] = maximum
-    performance_dict['Average of all the motif scores'] = get_avg(motifs_score)
-    performance_dict['Standard deviation of all the motif scores'] = get_sd(motifs_score)
-    performance_dict['Median of all the motif scores'] = get_median(motifs_score)
-    # TODO This part is when we have a solution
+    performance_dict = get_relative_performance(performance_dict, motifs)
+
+    # Perform this part only when there is a solution known
+    if solution is None:
+        return performance_dict
+    performance_dict = get_solution_relative_performance(performance_dict, motifs, solution)
 
     return performance_dict
 
@@ -117,8 +165,8 @@ if __name__ == '__main__':
     length = 8
     iterations = 10000
 
-    performance_dict = get_performance(solution, gibbs_sample, instances, length)
-    print_performance("Gibbs", performance_dict)
+    gibbs_performance_dict = get_performance(solution, gibbs_sample, instances, length)
+    print_performance("Gibbs", gibbs_performance_dict)
 
-    performance_dict = get_performance(solution, best_of_gibbs, instances, length, iterations)
-    print_performance("Best of gibbs", performance_dict)
+    best_of_gibbs_performance_dict = get_performance(solution, best_of_gibbs, instances, length, iterations)
+    print_performance("Best of gibbs", best_of_gibbs_performance_dict)

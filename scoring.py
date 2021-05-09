@@ -1,5 +1,4 @@
 # Help functions for scoring a motif matrix
-from copy import copy
 from math import log
 
 BASES = ["A", "T", "C", "G"]
@@ -40,6 +39,25 @@ def count_to_frequency_matrix(count_matrix):
     for base, occurances in count_matrix.items():
         frequency_matrix[base] = [occurance / instance_count for occurance in occurances]
     return frequency_matrix
+
+
+def score_sum(string, scoring_matrix):
+    """
+    Scores a DNA string using given scoring_matrix, which will be the sum of the total scoring.
+    The maximum will be the length of the string.
+    Motif length of scoring matrix must be the same as the string length
+    :param string: DNA string, consist only of letters A, T, C or G
+    :param scoring_matrix: Dict containing for every base (A, T, C and G) a list with the relative frequency of the base in a position
+    :return: Rating between 0 (lowest match) and length of string (highest match)
+
+    >>> score_pssm("AT", {'A': [1.0, 0.0], 'T': [0.0, 0.5], 'C': [0.0, 0.5], 'G': [0.0, 0.0]})
+    1.5
+    """
+    score = 1
+    for i in range(len(string)):
+        base = string[i]
+        score += scoring_matrix[base][i]
+    return score
 
 
 def score_pssm(string, scoring_matrix):
