@@ -62,46 +62,52 @@ def get_sd(motifs_score):
     return numpy.std(list(motifs_score.values()))
 
 
-def get_performance(solution, func, *args, **kwargs):
+def get_performance(solution, func, *args, **kwargs) -> dict:
     """
     Will return a bunch of statistics about the found solution. Among these statistics are: time elapsed, memory usage,
     score per motif, total score of motifs, minimum of score, maximum of score, average of all scores, standard
-    deviation of scores, ...
+    deviation of scores, ... in dict form
     """
     time_start = time.perf_counter()
 
     motifs = func(*args, **kwargs)
+    performance_dict = dict()
     # This part works for both parts described below
-    time_elapsed = (time.perf_counter() - time_start)
-    memMb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0 / 1024.0
+    performance_dict['The time elapsed (s)'] = (time.perf_counter() - time_start)
+    performance_dict['Memory used (Mb)'] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0 / 1024.0
 
     # This part is when we do not have a solution
-    motifs_score = get_motifs_score(motifs)
-    total_motifs_score = get_total_motifs_score(motifs)
+    performance_dict['The motifs scores'] = motifs_score = get_motifs_score(motifs)
+    performance_dict['Total of all the motifs score'] = get_total_motifs_score(motifs)
     minimum, maximum = get_min_max_motifs(motifs_score)
-    avg = get_avg(motifs_score)
-    standard_deviation = get_sd(motifs_score)
-    median = get_median(motifs_score)
+    performance_dict['Minimum motif score'] = minimum
+    performance_dict['Maximum motif score'] = maximum
+    performance_dict['Average of all the motif scores'] = get_avg(motifs_score)
+    performance_dict['Standard deviation of all the motif scores'] = get_sd(motifs_score)
+    performance_dict['Median of all the motif scores'] = get_median(motifs_score)
     # TODO This part is when we have a solution
 
-    return time_elapsed, memMb, motifs_score, total_motifs_score, minimum, maximum, avg, standard_deviation, median
+    return performance_dict
 
 
-def print_performance(implementation_name, time, memory, motifs_score, total_motifs_score, minimum, maximum, avg,
-                      standard_deviation, median):
-    print(f"\033[32;1mOur \'{implementation_name}\' implementation:\033[0m\t\t\t {time}\t {memory}")
-    print(f"\033[32;1mThe motifs scores: \033[0m{motifs_score}")
-    print(f"\033[32;1mTotal of all the motifs score: \033[0m{total_motifs_score}")
-    print(f"\033[32;1mMinimum motif score: \033[0m{minimum}")
-    print(f"\033[32;1mMaximum motif score: \033[0m{maximum}")
-    print(f"\033[32;1mAverage of all the motif scores: \033[0m{avg}")
-    print(f"\033[32;1mStandard deviation of all the motif scores: \033[0m{standard_deviation}")
-    print(f"\033[32;1mMedian of all the motif scores: \033[0m{median}")
+def print_performance(implementation_name, performance_dict):
+    """
+    This prints a performance report of the performance dict that
+    was passed through as a variable. The name of the implementation
+    is the first argument, and the second argument must exist of a key
+    with the explanation of the value connected to it.
+    :param: implementation_name: The name of the implementation to whom the performance
+    report belongs.
+    :param: performance_dict: All the performance data corresponding to the implementation that
+    was run for creating such a dict.
+    :returns: nothing
+    """
+    print(f"\033[36;1mPerformance statistics of {implementation_name}")
+    for item in performance_dict.items():
+        print(f"\033[32;1m{item[0]}: \033[0m\033[3m{item[1]}\033[0m")
 
 
 if __name__ == '__main__':
-    print(f"\033[36;1mPerformance statistics\t\t\t\t Time (s)\t\t\t\t Memory (Mb)\033[0m")
-
     instances = ["CAAAACCCTCAAATACATTTTAGAAACACAATTTCAGGATATTAAAAGTTAAATTCATCTAGTTATACAA",
                  "TCTTTTCTGAATCTGAATAAATACTTTTATTCTGTAGATGGTGGCTGTAGGAATCTGTCACACAGCATGA",
                  "CCACGTGGTTAGTGGCAACCTGGTGACCCCCCTTCCTGTGATTTTTACAAATAGAGCAGCCGGCATCGTT",
@@ -111,12 +117,8 @@ if __name__ == '__main__':
     length = 8
     iterations = 10000
 
-    gibbs_time, gibbs_memory, motifs_score, total_motifs_score, minimum, maximum, avg, standard_deviation, median = get_performance(
-        solution, gibbs_sample, instances, length)
-    print_performance("Gibbs", gibbs_time, gibbs_memory, motifs_score, total_motifs_score, minimum, maximum, avg,
-                      standard_deviation, median)
+    performance_dict = get_performance(solution, gibbs_sample, instances, length)
+    print_performance("Gibbs", performance_dict)
 
-    best_gibbs_time, best_gibbs_memory, best_motifs_score, best_total_motifs_score, best_minimum, best_maximum, best_avg, best_standard_deviation, best_median = get_performance(
-        solution, best_of_gibbs, instances, length, iterations)
-    print_performance("Best of gibbs", best_gibbs_time, best_gibbs_memory, best_motifs_score, best_total_motifs_score,
-                      best_minimum, best_maximum, best_avg, best_standard_deviation, best_median)
+    performance_dict = get_performance(solution, best_of_gibbs, instances, length, iterations)
+    print_performance("Best of gibbs", performance_dict)
