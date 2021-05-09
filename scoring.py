@@ -1,14 +1,18 @@
 # Help functions for scoring a motif matrix
 from math import log
 
+import numpy
+
 BASES = ["A", "T", "C", "G"]
 
 
 def instances_to_count_matrix(instances):
     """
     Convert known instances to count matrix (slide 17)
-    :param instances: Vector of strings of the same length (containing only the letters A, T, C and G)
-    :return: A dict with 4 entries (A, T, C and G), with each entry containing a list of the occurances of that letter on given position
+    :param instances: Vector of strings of the same length (containing only the
+    letters A, T, C and G)
+    :return: A dict with 4 entries (A, T, C and G), with each entry containing a
+    list of the occurances of that letter on given position
 
 
     >>> instances_to_count_matrix(["ACC", "ATG"])
@@ -28,8 +32,11 @@ def instances_to_count_matrix(instances):
 def count_to_frequency_matrix(count_matrix):
     """
     Converts a count matrix to a frequency matrix (slide 18)
-    :param instances: A dict with 4 entries (A, T, C and G), with each entry containing a list of the absolute occurances of that letter on given position
-    :return: A dict with 4 entries (A, T, C and G), with each entry containing a list of the relative occurances of that letter on given position
+    :param instances: A dict with 4 entries (A, T, C and G), with each entry
+    containing a list of the absolute occurances of that letter on given
+    position
+    :return: A dict with 4 entries (A, T, C and G), with each entry containing a
+    list of the relative occurances of that letter on given position
 
     >>> count_to_frequency_matrix({'A': [2, 0], 'T': [0, 1], 'C': [0, 1], 'G': [0, 0]})
     {'A': [1.0, 0.0], 'T': [0.0, 0.5], 'C': [0.0, 0.5], 'G': [0.0, 0.0]}
@@ -37,18 +44,21 @@ def count_to_frequency_matrix(count_matrix):
     frequency_matrix = dict()
     instance_count = sum(count_matrix[base][0] for base in BASES)
     for base, occurances in count_matrix.items():
-        frequency_matrix[base] = [occurance / instance_count for occurance in occurances]
+        frequency_matrix[base] = [occurance / instance_count for occurance in
+                                  occurances]
     return frequency_matrix
 
 
 def score_sum(string, scoring_matrix):
     """
-    Scores a DNA string using given scoring_matrix, which will be the sum of the total scoring.
-    The maximum will be the length of the string.
+    Scores a DNA string using given scoring_matrix, which will be the sum of the
+    total scoring. The maximum will be the length of the string.
     Motif length of scoring matrix must be the same as the string length
     :param string: DNA string, consist only of letters A, T, C or G
-    :param scoring_matrix: Dict containing for every base (A, T, C and G) a list with the relative frequency of the base in a position
-    :return: Rating between 0 (lowest match) and length of string (highest match)
+    :param scoring_matrix: Dict containing for every base (A, T, C and G) a list
+    with the relative frequency of the base in a position
+    :return: Rating between 0 (lowest match) and length of string (highest
+    match)
 
     >>> score_pssm("AT", {'A': [1.0, 0.0], 'T': [0.0, 0.5], 'C': [0.0, 0.5], 'G': [0.0, 0.0]})
     1.5
@@ -65,7 +75,8 @@ def score_pssm(string, scoring_matrix):
     Scores a DNA string using given scoring_matrix (slide 19)
     Motif length of scoring matrix must be the same as the string length
     :param string: DNA string, consist only of letters A, T, C or G
-    :param scoring_matrix: Dict containing for every base (A, T, C and G) a list with the relative frequency of the base in a position
+    :param scoring_matrix: Dict containing for every base (A, T, C and G) a list
+    with the relative frequency of the base in a position
     :return: Rating between 0 (lowest match) and 1 (highest match)
 
     >>> score_pssm("AT", {'A': [1.0, 0.0], 'T': [0.0, 0.5], 'C': [0.0, 0.5], 'G': [0.0, 0.0]})
@@ -105,7 +116,8 @@ def add_pseudo_counts(frequency_matrix, low_frequency=0.1):
         diff = (zero_count * low_frequency) / nonzero_count
         for base in BASES:
             base_frequency = frequency_matrix[base][i]
-            pseudo_matrix[base][i] = low_frequency if base_frequency == 0 else base_frequency - diff
+            pseudo_matrix[base][
+                i] = low_frequency if base_frequency == 0 else base_frequency - diff
     return pseudo_matrix
 
 
@@ -140,6 +152,20 @@ def get_motifs_score(motifs):
         score_dict[motif] = score_pssm_log(motif, scoring_matrix)
 
     return score_dict
+
+
+def get_motifs_percentage(motifs):
+    scoring_matrix = get_frequency_matrix(motifs)
+    score_dict = dict()
+    for motif in motifs:
+        score_dict[motif] = score_pssm(motif, scoring_matrix)
+
+    return score_dict
+
+
+def get_total_motifs_percentage(motifs):
+    score_dict = get_motifs_percentage(motifs)
+    return numpy.product(list(score_dict.values()))
 
 
 def get_total_motifs_score(motifs):
