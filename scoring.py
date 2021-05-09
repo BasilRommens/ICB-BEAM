@@ -115,6 +115,20 @@ def get_frequency_matrix(instances):
     return frequency_matrix
 
 
+def get_motifs_score(motifs):
+    scoring_matrix = get_scoring_matrix(motifs)
+    score_dict = dict()
+    for motif in motifs:
+        score_dict[motif] = score_pssm_log(motif, scoring_matrix)
+
+    return score_dict
+
+
+def get_total_motifs_score(motifs):
+    score_dict = get_motifs_score(motifs)
+    return sum(list(score_dict.values()))
+
+
 if __name__ == '__main__':
     from pprint import pprint
 

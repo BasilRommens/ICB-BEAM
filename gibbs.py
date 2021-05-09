@@ -1,7 +1,12 @@
 # Implementation of the gibbs sampling algorithm
+import time
+
 from random import randint
 from copy import copy
 from scoring import get_scoring_matrix, score_pssm_log, get_frequency_matrix
+
+# Set the time out constant to 1
+TIME_OUT = 1
 
 
 def splice_string(string, start_position, length):
@@ -84,8 +89,8 @@ def gibbs_sample(instances, motif_length):
     # Bool whether the position has been changed somewhere in the algorithm
     positions_changed = True
 
+    time_start = time.perf_counter()
     while positions_changed:
-        # print("Iteration")
         old_positions = copy(motif_positions)
 
         for i in range(len(instances)):
@@ -93,6 +98,10 @@ def gibbs_sample(instances, motif_length):
             motif_positions[i] = new_position
 
         positions_changed = old_positions != motif_positions
+        time_elapsed = (time.perf_counter() - time_start)
+        # If the loops run longer than timeout seconds, the function will throw an exception to time out
+        if time_elapsed > TIME_OUT:
+            raise Exception("\033[1;93mTimed out!\033[0m")
 
     return get_motifs(motif_positions, instances, motif_length)
 
@@ -110,9 +119,12 @@ def best_of_gibbs(instances, motif_length, num_iterations=10):
     ['GT', 'GT', 'GT', 'GT']
     """
     gibs_results = []
-    for i in range(num_iterations):
-        gibbs_result = gibbs_sample(instances, motif_length)
-        gibs_results.append(gibbs_result)
+    for _ in range(num_iterations):
+        try:
+            gibbs_result = gibbs_sample(instances, motif_length)
+            gibs_results.append(gibbs_result)
+        except Exception as e:
+            print(e)
     return most_occuring(gibs_results)
 
 
