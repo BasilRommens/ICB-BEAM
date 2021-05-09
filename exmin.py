@@ -67,7 +67,10 @@ def do_expectation(sequences: list, beliefs: list, motif_width: int):
             values.append(value)
             row_total += value
         # normalize values
-        new_hidden_variables.append([value/row_total for value in values])
+        if row_total != 0:
+            new_hidden_variables.append([value/row_total for value in values])
+        else:
+            new_hidden_variables.append(values)
     return new_hidden_variables
 
 # counts the amount of c's that occur at position k
@@ -77,7 +80,7 @@ def count_occurences(sequences: list, hidden_variables, motif_width, c, k):
         for i in range(len(sequences)):
             # sum over positions where c appears
             for j in range(len(sequences[i]) - k + 1):
-                if sequences[i][j] == c and j + k - 1 < len(sequences[i]) - motif_width:
+                if sequences[i][j + k - 1] == c and j + k - 1 < len(sequences[i]) - motif_width:
                     total += hidden_variables[i][j]
         return total
     else:
@@ -95,6 +98,8 @@ def do_maximization(sequences, hidden_variables, motif_width):
     for i in range(4):
         new_row = list()
         for k in range(motif_width + 1):
+            # if count_occurences(sequences, hidden_variables, motif_width, to_char(i), k) == 0:
+            #     print("oops")
             nominator = count_occurences(sequences, hidden_variables, motif_width, to_char(i), k)
             denominator = 0 # pseudo count
             for b in range(4):
@@ -107,6 +112,7 @@ def print_motif_and_positions(hidden_variables, beliefs, motif_width):
 
     for i in range(len(hidden_variables)):
         print("motive location for sequence " + i.__str__() + ":", hidden_variables[i].index(max(hidden_variables[i])))
+        print(len(hidden_variables[i]))
     maximums = [0 for _ in range(motif_width)]
     motif = ['A' for _ in range(motif_width)]
     for i in range(len(beliefs)):
@@ -127,12 +133,12 @@ def run_em(sequences, motif_width):
         # print("new variables: ", hidden_variables)
         # print("new beliefs: ", new_beliefs)
         # print("difference with old:", difference_in(old_beliefs, new_beliefs, motif_width))
-        if difference_in(old_beliefs, new_beliefs, motif_width) > 0.0001:
+        if difference_in(old_beliefs, new_beliefs, motif_width) > 0.1:
             old_beliefs = new_beliefs
         else:
             print_motif_and_positions(hidden_variables, new_beliefs, motif_width)
             return hidden_variables, new_beliefs
 
 # print(do_expectation(["GCTGTAG", "CTGCTAG"], p, 3))
-test_sequences = ["TTTGGGGCTGTG", "CCCTTTGAAAAA", "AATTTAACTAAG"]
-run_em(test_sequences,3)
+test_sequences = ["GGGGATACTATGATGCGTAGCTAGGAACTGTG", "CCAACGCGACTACGACTCGATCTTTGAATAAA", "AATAACGCCCCGGAATTCGATCTAACTACCAG"]
+run_em(test_sequences,14)
