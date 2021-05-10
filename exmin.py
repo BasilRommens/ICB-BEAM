@@ -150,7 +150,7 @@ def em(sequences, initial_beliefs, motif_width):
         else:
             motif = get_motif_from_beliefs(new_beliefs, motif_width)
             score = get_score(sequences, hidden_variables, motif)
-            print("motif found: ", motif)
+            # print("motif found: ", motif)
             # print_motif_positions(sequences,hidden_variables, motif_width)
             return motif, score
 
