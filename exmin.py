@@ -1,12 +1,12 @@
 # Implementation of the expectation min motif finding algorithm
-# TODO division by zero error oplossen door uit te zoeken wat die pseudocounters doen
 # TODO optimaliseren in count_occurences
-# TDO deftige interface maken
+# TDO deftige interface makenK
+
+EPS = 0.01
+BASES = 4
 
 
 import random
-
-
 def to_index(c):
     if c == 'A':
         return 0
@@ -16,7 +16,6 @@ def to_index(c):
         return 2
     elif c == 'T':
         return 3
-
 
 def to_char(i):
     if i == 0:
@@ -28,46 +27,37 @@ def to_char(i):
     elif i == 3:
         return 'T'
 
-
 def difference_in(p_old, p_new, motif_width):
     total = 0
-    for i in range(4):
+    for i in range(BASES):
         for k in range(motif_width + 1):
             total += abs(p_old[i][k] - p_new[i][k])
     return total
 
-
 #  returns a matrix with random values where the columns add up to one
 def initialize_beliefs(motif_width):
-    amount_of_bases = 4
-    beliefs = [[] for _ in range(amount_of_bases)]
+    beliefs = [[] for _ in range(BASES)]
 
     for i in range(motif_width + 1):
         # https://stackoverflow.com/a/3590105
-        dividers = sorted(random.sample(range(1, 10), amount_of_bases - 1))
+        dividers = sorted(random.sample(range(1, 10), BASES-1))
         values = [(a - b) / 10 for a, b in zip(dividers + [10], [0] + dividers)]
         for j in range(len(values)):
             beliefs[j].append(values[j])
 
     return beliefs
 
-
 # calculates the probability of a sequence given a motif starting position
-def prob_sequence_motif(sequence: str, motif_start: int, beliefs: list,
-                        motif_width: int):
-    before_motif = 1
+def prob_sequence_motif(sequence: str, motif_start: int, beliefs: list, motif_width: int):
+    probability = 1
     for k in range(motif_start):
-        before_motif *= beliefs[to_index(sequence[k])][0]
-    motif = 1
-    for k in range(motif_start, motif_start + motif_width):
-        motif *= beliefs[to_index(sequence[k])][k - motif_start + 1]
-    after_motif = 1
-    for k in range(motif_start + motif_width, len(sequence)):
-        before_motif *= beliefs[to_index(sequence[k])][0]
+        probability *= beliefs[to_index(sequence[k])][0]
+    for k in range(motif_start, motif_start+motif_width):
+        probability *= beliefs[to_index(sequence[k])][k-motif_start+1]
+    for k in range(motif_start+motif_width, len(sequence)):
+        probability *= beliefs[to_index(sequence[k])][0]
 
-    # assume that the starting position is uniformly distributed over all positions
-    return before_motif * motif * after_motif
-
+    return probability
 
 # expectation step of the EM algorithm (in OOPS), we guess new values for the hidden variables
 def do_expectation(sequences: list, beliefs: list, motif_width: int):
@@ -78,14 +68,13 @@ def do_expectation(sequences: list, beliefs: list, motif_width: int):
         for j in range(len(sequence) - motif_width + 1):
             value = prob_sequence_motif(sequence, j, beliefs, motif_width)
             values.append(value)
-            row_total += value
-        # normalize values
+            if j > 0: row_total += value
+
         if row_total != 0:
-            new_hidden_variables.append([value / row_total for value in values])
+            new_hidden_variables.append([value/row_total for value in values])
         else:
             new_hidden_variables.append(values)
     return new_hidden_variables
-
 
 # counts the amount of c's that occur at position k
 def count_occurences(sequences: list, hidden_variables, motif_width, c, k):
@@ -94,8 +83,7 @@ def count_occurences(sequences: list, hidden_variables, motif_width, c, k):
         for i in range(len(sequences)):
             # sum over positions where c appears
             for j in range(len(sequences[i]) - k + 1):
-                if sequences[i][j + k - 1] == c and j + k - 1 < len(
-                        sequences[i]) - motif_width:
+                if sequences[i][j + k - 1] == c and j + k - 1 <= len(sequences[i]) - motif_width:
                     total += hidden_variables[i][j]
         return total
     else:
@@ -103,35 +91,35 @@ def count_occurences(sequences: list, hidden_variables, motif_width, c, k):
         for sequence in sequences:
             total_occurences += sequence.count(c)
         others = 0
-        for j in range(1, motif_width):
-            others += count_occurences(sequences, hidden_variables, motif_width,
-                                       c, j)
+        for j in range(1, motif_width+1):
+            others += count_occurences(sequences, hidden_variables, motif_width, c, j)
         return total_occurences - others
-
 
 # maximization step of the EM algorithm, we update beliefs based on our new hidden variables
 def do_maximization(sequences, hidden_variables, motif_width):
     new_beliefs = list()
-    for i in range(4):
+    for i in range(BASES):
         new_row = list()
+        denominator = 0
         for k in range(motif_width + 1):
             # if count_occurences(sequences, hidden_variables, motif_width, to_char(i), k) == 0:
             #     print("oops")
-            nominator = count_occurences(sequences, hidden_variables,
-                                         motif_width, to_char(i), k)
-            denominator = 0  # pseudo count
-            for b in range(4):
-                denominator += count_occurences(sequences, hidden_variables,
-                                                motif_width, to_char(b), k)
-            new_row.append(nominator / denominator)
-        new_beliefs.append(new_row)
+            nominator = count_occurences(sequences, hidden_variables, motif_width, to_char(i), k) + 1 # plus one is a pseudocounter
+            denominator += nominator
+            new_row.append(nominator)
+
+        if denominator != 0:
+            new_beliefs.append([nominator/denominator for nominator in new_row])
+        else:
+            new_beliefs.append(new_row)
     return new_beliefs
 
-
-def print_motif_and_positions(hidden_variables, beliefs, motif_width):
+def print_motif_positions(sequences, hidden_variables, motif_width):
     for i in range(len(hidden_variables)):
-        print("motive location for sequence " + i.__str__() + ":",
-              hidden_variables[i].index(max(hidden_variables[i])))
+        motif_index = hidden_variables[i].index(max(hidden_variables[i]))
+        print("motive found in sequence " + i.__str__() + ":", sequences[i][motif_index:motif_index + motif_width], "at index", motif_index)
+
+def get_motif_from_beliefs(beliefs, motif_width):
     maximums = [0 for _ in range(motif_width)]
     motif = ['A' for _ in range(motif_width)]
     for i in range(len(beliefs)):
@@ -139,46 +127,27 @@ def print_motif_and_positions(hidden_variables, beliefs, motif_width):
             if beliefs[i][k] > maximums[k - 1]:
                 motif[k - 1] = to_char(i)
                 maximums[k - 1] = beliefs[i][k]
-    str1 = ""
-    print("found motif: ", str1.join(motif))
-
-
-def get_motif_idx_from_hidden_var(hidden_variables, i):
-    return hidden_variables[i].index(max(hidden_variables[i]))
-
-
-def get_motif(sequence, idx, length):
-    return sequence[idx:idx + length]
-
-
-def get_motifs(sequences, motif_width, hidden_variables):
-    motifs = list()
-    for i in range(len(hidden_variables)):
-        new_motif_idx = get_motif_idx_from_hidden_var(hidden_variables,
-                                                      i)
-        new_motif = get_motif(sequences[i], new_motif_idx, motif_width)
-        motifs.append(new_motif)
-    return motifs
-
+    str_temp = ""
+    return str_temp.join(motif)
 
 # iteravely runs em until a certain treshhold
-def run_em(sequences, motif_width):
-    print("size of sequences:", len(sequences[0]))
-    old_beliefs = initialize_beliefs(motif_width)
-    print("initial beliefs:", old_beliefs)
+def run_em(sequences, initial_beliefs, motif_width):
+    old_beliefs = initial_beliefs
     while True:
         hidden_variables = do_expectation(sequences, old_beliefs, motif_width)
         new_beliefs = do_maximization(sequences, hidden_variables, motif_width)
         if difference_in(old_beliefs, new_beliefs, motif_width) > 0.1:
             old_beliefs = new_beliefs
         else:
-            print_motif_and_positions(hidden_variables, new_beliefs,
-                                      motif_width)
-            # return hidden_variables, new_beliefs
-            # This was changed by Basil
-            return get_motifs(sequences, motif_width, hidden_variables)
-            # Here do my changes end
+            # print_motif_positions(sequences,hidden_variables, motif_width)
+            result = get_motif_from_beliefs(new_beliefs, motif_width)
+            return get_motif_from_beliefs(new_beliefs, motif_width)
 
-# print(do_expectation(["GCTGTAG", "CTGCTAG"], p, 3))
-# test_sequences = ["GGGGATACTATGATGCGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGTGGTTAACCAGCTAGGAACTGTG", "CCGGTTAACCAACGCGACTACGACTCGATCCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACTTTGAATAAA", "AATAAGGTTAACCCGCCCCAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGGGAATTCGATCTAACTACCAG"]
-# run_em(test_sequences, 3)
+def run_meme(sequences, motif_width, n):
+    motifs = list()
+    for i in range(n):
+        motifs.append(run_em(sequences, initialize_beliefs(motif_width), motif_width))
+    return motifs
+
+test_sequences = ["GGGGATACTATGATGCGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGTGGTTAACCAGCTAGGAACTGTG", "CCGGTTAACCAACGCGACTACGACTCGATCCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACTTTGAATAAA", "AATAAGGTTAACCCGCCCCAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGGGAATTCGATCTAACTACCAG"]
+print(run_meme(test_sequences, 11, 5))
