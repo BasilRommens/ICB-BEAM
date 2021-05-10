@@ -151,6 +151,16 @@ def get_motif(sequence, idx, length):
     return sequence[idx:idx + length]
 
 
+def get_motifs(sequences, motif_width, hidden_variables):
+    motifs = list()
+    for i in range(len(hidden_variables)):
+        new_motif_idx = get_motif_idx_from_hidden_var(hidden_variables,
+                                                      i)
+        new_motif = get_motif(sequences[i], new_motif_idx, motif_width)
+        motifs.append(new_motif)
+    return motifs
+
+
 # iteravely runs em until a certain treshhold
 def run_em(sequences, motif_width):
     print("size of sequences:", len(sequences[0]))
@@ -166,13 +176,7 @@ def run_em(sequences, motif_width):
                                       motif_width)
             # return hidden_variables, new_beliefs
             # This was changed by Basil
-            motifs = list()
-            for i in range(len(hidden_variables)):
-                new_motif_idx = get_motif_idx_from_hidden_var(hidden_variables,
-                                                              i)
-                new_motif = get_motif(sequences[i], new_motif_idx, motif_width)
-                motifs.append(new_motif)
-            return motifs
+            return get_motifs(sequences, motif_width, hidden_variables)
             # Here do my changes end
 
 # print(do_expectation(["GCTGTAG", "CTGCTAG"], p, 3))
