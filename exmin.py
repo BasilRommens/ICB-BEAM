@@ -119,6 +119,15 @@ def print_motif_positions(sequences, hidden_variables, motif_width):
         motif_index = hidden_variables[i].index(max(hidden_variables[i]))
         print("motive found in sequence " + i.__str__() + ":", sequences[i][motif_index:motif_index + motif_width], "at index", motif_index)
 
+def get_score(sequences, hidden_variables, motif):
+    score = 0
+    for i in range(len(hidden_variables)):
+        motif_index = hidden_variables[i].index(max(hidden_variables[i]))
+        for j in range(len(motif)):
+            if sequences[i][motif_index + j] == motif[j]:
+                score += 1
+    return score
+
 def get_motif_from_beliefs(beliefs, motif_width):
     maximums = [0 for _ in range(motif_width)]
     motif = ['A' for _ in range(motif_width)]
@@ -131,7 +140,7 @@ def get_motif_from_beliefs(beliefs, motif_width):
     return str_temp.join(motif)
 
 # iteravely runs em until a certain treshhold
-def run_em(sequences, initial_beliefs, motif_width):
+def em(sequences, initial_beliefs, motif_width):
     old_beliefs = initial_beliefs
     while True:
         hidden_variables = do_expectation(sequences, old_beliefs, motif_width)
@@ -139,15 +148,26 @@ def run_em(sequences, initial_beliefs, motif_width):
         if difference_in(old_beliefs, new_beliefs, motif_width) > 0.1:
             old_beliefs = new_beliefs
         else:
+            motif = get_motif_from_beliefs(new_beliefs, motif_width)
+            score = get_score(sequences, hidden_variables, motif)
+            print("motif found: ", motif)
             # print_motif_positions(sequences,hidden_variables, motif_width)
-            result = get_motif_from_beliefs(new_beliefs, motif_width)
-            return get_motif_from_beliefs(new_beliefs, motif_width)
+            return motif, score
 
 def run_meme(sequences, motif_width, n):
-    motifs = list()
+    max_score = 0
+    best_motif = ""
     for i in range(n):
-        motifs.append(run_em(sequences, initialize_beliefs(motif_width), motif_width))
-    return motifs
+        motif, score = em(sequences, initialize_beliefs(motif_width), motif_width)
+        if score > max_score:
+            max_score = score
+            best_motif = motif
+    return best_motif, max_score
 
-test_sequences = ["GGGGATACTATGATGCGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGGGGATACTATGATGCGTGGTTAACCAGCTAGGAACTGTGGTGGTTAACCAGCTAGGAACTGTG", "CCGGTTAACCAACGCGACTACGACTCGATCCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACCGGTTAACCAACGCGACTACGACTCGATCTTTGAATAAACTTTGAATAAA", "AATAAGGTTAACCCGCCCCAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGAATAAGGTTAACCCGCCCCGGAATTCGATCTAACTACCAGGGAATTCGATCTAACTACCAG"]
-print(run_meme(test_sequences, 11, 5))
+test = [ "CAAAACCCTCAAATACATTTTAGAAACTATAAAAAACAATTTCAGGATATTAAAAGTTAAATTCATCTAGTTATACAA",
+        "TCTTTTCTGAATCTGAATAAATACTTTTATTCTGTAGATGTATAAAAAGTGGCTGTAGGAATCTGTCACACAGCATGA",
+        "CCACGTGGTTAGTGGCAACCTGGTGACCCCCCTATAAAAATTCCTGTGATTTTTACAAATAGAGCAGCCGGCATCGTT",
+        "GGAGAGTGTTTATAAAAATTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
+        "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGTATAAAAAGATAAGGAAACCAAGGCAATGAG"]
+print(run_meme(test, 8, 100))
+
