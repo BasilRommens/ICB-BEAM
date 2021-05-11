@@ -1,6 +1,7 @@
 # Implementation of the expectation min motif finding algorithm
 # TODO optimaliseren in count_occurences
 # TDO deftige interface makenK
+from scoring import get_frequency_matrix
 
 EPS = 0.01
 BASES = 4
@@ -111,19 +112,13 @@ def do_maximization(sequences, hidden_variables, motif_width):
         if denominator != 0:
             new_beliefs.append([nominator/denominator for nominator in new_row])
         else:
-            print("zero nominator")
             new_beliefs.append(new_row)
     return new_beliefs
 
-def print_motif_positions(sequences, hidden_variables, motif_width):
-    for i in range(len(hidden_variables)):
-        motif_index = hidden_variables[i].index(max(hidden_variables[i]))
-        print("motive found in sequence " + i.__str__() + ":", sequences[i][motif_index:motif_index + motif_width], "at index", motif_index)
-
-def get_score(sequences, hidden_variables, motif):
+def score_motif(sequences, starting_positions, motif):
     score = 0
-    for i in range(len(hidden_variables)):
-        motif_index = hidden_variables[i].index(max(hidden_variables[i]))
+    for i in range(len(starting_positions)):
+        motif_index = starting_positions[i].index(max(starting_positions[i]))
         for j in range(len(motif)):
             if sequences[i][motif_index + j] == motif[j]:
                 score += 1
@@ -140,36 +135,54 @@ def get_motif_from_beliefs(beliefs, motif_width):
     str_temp = ""
     return str_temp.join(motif)
 
+def get_motifs_from_sequences(sequences, starting_positions, motif_width, verbose = False):
+    motifs = list()
+    for i in range(len(starting_positions)):
+        motif_index = starting_positions[i].index(max(starting_positions[i]))
+        motif = sequences[i][motif_index:motif_index + motif_width]
+        motifs.append(motif)
+        if verbose: print(motif)
+    return motifs
+
 # iteravely runs em until a certain treshhold
-def em(sequences, initial_beliefs, motif_width):
-    old_beliefs = initial_beliefs
+def exmin(sequences, motif_width):
+    old_beliefs = initialize_beliefs(motif_width)
     while True:
         hidden_variables = do_expectation(sequences, old_beliefs, motif_width)
         new_beliefs = do_maximization(sequences, hidden_variables, motif_width)
         if difference_in(old_beliefs, new_beliefs, motif_width) < EPS:
             old_beliefs = new_beliefs
         else:
-            motif = get_motif_from_beliefs(new_beliefs, motif_width)
-            score = get_score(sequences, hidden_variables, motif)
-            # print("motif found: ", motif)
-            # print_motif_positions(sequences,hidden_variables, motif_width)
-            return motif, score
+            return hidden_variables, new_beliefs
 
-def run_meme(sequences, motif_width, n):
+def find_motif_exmin(sequences, motif_width):
+    starting_positions, motif_beliefs = exmin(sequences, motif_width)
+    return get_motifs_from_sequences(sequences, starting_positions, motif_width)
+
+def best_of_exmin(sequences, motif_width, n=100):
     max_score = 0
-    best_motif = ""
+    best_motifs = list()
     for i in range(n):
-        motif, score = em(sequences, initialize_beliefs(motif_width), motif_width)
+        starting_positions, motif_beliefs = exmin(sequences, motif_width)
+        found_motifs = get_motifs_from_sequences(sequences, starting_positions, motif_width)
+        most_likely_motif = get_motif_from_beliefs(motif_beliefs, motif_width)
+        score = score_motif(sequences, starting_positions, most_likely_motif)
         if score > max_score:
             max_score = score
-            best_motif = motif
-    return best_motif, max_score
+            best_motifs = found_motifs
+    return best_motifs
 
-test = [ "CAAAACCCTCAAATACATTTTAGAAACTATAAAAAACAATTTCAGGATATTAAAAGTTAAATTCATCTAGTTATACAA",
-        "TCTTTTCTGAATCTGAATAAATACTTTTATTCTGTAGATGTATAAAAAGTGGCTGTAGGAATCTGTCACACAGCATGA",
-        "CCACGTGGTTAGTGGCAACCTGGTGACCCCCCTATAAAAATTCCTGTGATTTTTACAAATAGAGCAGCCGGCATCGTT",
-        "GGAGAGTGTTTATAAAAATTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
-        "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGTATAAAAAGATAAGGAAACCAAGGCAATGAG"]
+if __name__ == '__main__':
+    from pprint import pprint
 
-print(run_meme(test, 8, 100))
+    sequences = ["CAAAACCCTCAAATACATTTTAGAAACACAATTTCAGGATATTAAAAGTTAAATTCATCTAGTTATACAA",
+                 "TCTTTTCTGAATCTGAATAAATACTTTTATTCTGTAGATGGTGGCTGTAGGAATCTGTCACACAGCATGA",
+                 "CCACGTGGTTAGTGGCAACCTGGTGACCCCCCTTCCTGTGATTTTTACAAATAGAGCAGCCGGCATCGTT",
+                 "GGAGAGTGTTTTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
+                 "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGGATAAGGAAACCAAGGCAATGAG"]
+
+    # print(best_of_exmin(test, 8, 10))
+    motifs = best_of_exmin(sequences, 8)
+    pprint(motifs)
+    pprint(get_frequency_matrix(motifs))
 
