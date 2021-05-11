@@ -63,17 +63,17 @@ def prob_sequence_motif(sequence: str, motif_start: int, beliefs: list, motif_wi
 def do_expectation(sequences: list, beliefs: list, motif_width: int):
     new_hidden_variables = list()
     for sequence in sequences:
-        values = list()
+        new_row = list()
         row_total = 0
         for j in range(len(sequence) - motif_width + 1):
             value = prob_sequence_motif(sequence, j, beliefs, motif_width)
-            values.append(value)
+            new_row.append(value)
             if j > 0: row_total += value
-
+        # normalize
         if row_total != 0:
-            new_hidden_variables.append([value/row_total for value in values])
+            new_hidden_variables.append([value/row_total for value in new_row])
         else:
-            new_hidden_variables.append(values)
+            new_hidden_variables.append(new_row)
     return new_hidden_variables
 
 # counts the amount of c's that occur at position k
@@ -111,6 +111,7 @@ def do_maximization(sequences, hidden_variables, motif_width):
         if denominator != 0:
             new_beliefs.append([nominator/denominator for nominator in new_row])
         else:
+            print("zero nominator")
             new_beliefs.append(new_row)
     return new_beliefs
 
@@ -145,7 +146,7 @@ def em(sequences, initial_beliefs, motif_width):
     while True:
         hidden_variables = do_expectation(sequences, old_beliefs, motif_width)
         new_beliefs = do_maximization(sequences, hidden_variables, motif_width)
-        if difference_in(old_beliefs, new_beliefs, motif_width) > 0.1:
+        if difference_in(old_beliefs, new_beliefs, motif_width) < EPS:
             old_beliefs = new_beliefs
         else:
             motif = get_motif_from_beliefs(new_beliefs, motif_width)
@@ -169,5 +170,6 @@ test = [ "CAAAACCCTCAAATACATTTTAGAAACTATAAAAAACAATTTCAGGATATTAAAAGTTAAATTCATCTAG
         "CCACGTGGTTAGTGGCAACCTGGTGACCCCCCTATAAAAATTCCTGTGATTTTTACAAATAGAGCAGCCGGCATCGTT",
         "GGAGAGTGTTTATAAAAATTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
         "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGTATAAAAAGATAAGGAAACCAAGGCAATGAG"]
+
 print(run_meme(test, 8, 100))
 
