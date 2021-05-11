@@ -39,7 +39,6 @@ def difference_in(p_old, p_new, motif_width):
             total += abs(p_old[i][k] - p_new[i][k])
     return total
 
-#  returns a matrix with random values where the columns add up to one
 def initialize_beliefs(motif_width):
     """
     generates a random belief matrix for a motif (in meme format)
@@ -257,7 +256,6 @@ if __name__ == '__main__':
                  "GGAGAGTGTTTTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
                  "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGGATAAGGAAACCAAGGCAATGAG"]
 
-    # print(best_of_exmin(test, 8, 10))
     motifs = best_of_exmin(sequences, 8)
     pprint(motifs)
     pprint(get_frequency_matrix(motifs))
