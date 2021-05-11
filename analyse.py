@@ -4,8 +4,8 @@ import time
 
 import numpy
 
-from exmin import run_em
 from gibbs import gibbs_sample, best_of_gibbs
+from exmin import find_motif_exmin, best_of_exmin
 from scoring import get_motifs_score, get_total_motifs_score, \
     get_frequency_matrix, score_sum, get_motifs_percentage, \
     get_total_motifs_percentage
@@ -227,14 +227,21 @@ if __name__ == '__main__':
     length = 8
     iterations = 10000
 
-    gibbs_performance_dict = get_performance(solution, gibbs_sample, instances,
-                                             length)
-    print_performance("Gibbs", gibbs_performance_dict)
+    # gibbs_performance_dict = get_performance(solution, gibbs_sample, instances,
+    #                                          length)
+    # print_performance("Gibbs", gibbs_performance_dict)
+    #
+    # best_of_gibbs_performance_dict = get_performance(solution, best_of_gibbs,
+    #                                                  instances, length,
+    #                                                  iterations)
+    # print_performance("Best of gibbs", best_of_gibbs_performance_dict)
 
-    best_of_gibbs_performance_dict = get_performance(solution, best_of_gibbs,
-                                                     instances, length,
-                                                     iterations)
-    print_performance("Best of gibbs", best_of_gibbs_performance_dict)
 
-    em_dict = get_performance(solution, run_em, instances, length)
+    em_dict = get_performance(solution, find_motif_exmin, instances, length)
+
     print_performance("Expectation minimization", em_dict)
+
+    best_of_em_performance_dict = get_performance(solution, best_of_exmin,
+                                                  instances, length,
+                                                  iterations)
+    print_performance("Best of expectation minimization", best_of_em_performance_dict)

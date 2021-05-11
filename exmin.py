@@ -159,10 +159,10 @@ def find_motif_exmin(sequences, motif_width):
     starting_positions, motif_beliefs = exmin(sequences, motif_width)
     return get_motifs_from_sequences(sequences, starting_positions, motif_width)
 
-def best_of_exmin(sequences, motif_width, n=100):
+def best_of_exmin(sequences, motif_width, iterations=100):
     max_score = 0
     best_motifs = list()
-    for i in range(n):
+    for _ in range(iterations):
         starting_positions, motif_beliefs = exmin(sequences, motif_width)
         found_motifs = get_motifs_from_sequences(sequences, starting_positions, motif_width)
         most_likely_motif = get_motif_from_beliefs(motif_beliefs, motif_width)
@@ -185,4 +185,5 @@ if __name__ == '__main__':
     motifs = best_of_exmin(sequences, 8)
     pprint(motifs)
     pprint(get_frequency_matrix(motifs))
+
 
