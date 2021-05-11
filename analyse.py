@@ -236,7 +236,6 @@ if __name__ == '__main__':
     #                                                  iterations)
     # print_performance("Best of gibbs", best_of_gibbs_performance_dict)
 
-
     em_dict = get_performance(solution, find_motif_exmin, instances, length)
 
     print_performance("Expectation minimization", em_dict)
