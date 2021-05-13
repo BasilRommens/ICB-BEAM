@@ -10,6 +10,8 @@ from scoring import get_motifs_score, get_total_motifs_score, \
     get_frequency_matrix, score_sum, get_motifs_percentage, \
     get_total_motifs_percentage
 
+BASES = ["A", "T", "C", "G"]
+
 
 def get_value(value: tuple):
     """
@@ -226,13 +228,75 @@ def create_performance_sheet(file_name, performance_dict):
         filewriter.writerow(list(performance_dict.values()))
 
 
+def get_fasta_data_list(file_name) -> list:
+    # Opens the file
+    with open(file_name) as f:
+        lines = f.readlines()
+
+    # Processes all the data in the file
+    ret_list = []
+    sequence = ""
+    for line in lines:
+        # If there is an colon in the line then it announces a new DNA string
+        if ':' in line:
+            continue
+        sequence += line[:-1]
+        # If there is an empty line with a line break
+        # then there is a new DNA sequence
+        if len(line) == 1:
+            if not len(sequence):
+                continue
+            ret_list.append(sequence)
+            sequence = ""
+            continue
+    return ret_list
+
+
+def remove_unwanted_characters(strings, whitelist):
+    changed = [True] * len(strings)
+    while max(changed):
+        clean_strings = []
+        for i in range(len(strings)):
+            string = strings[i]
+            changed[i] = False
+            clean_string = string
+            for letter in string:
+                if letter not in whitelist:
+                    clean_string = string.replace(letter, '')
+                    clean_strings.append(clean_string)
+                    changed[i] = True
+                    break
+            if not changed[i]:
+                clean_strings.append(clean_string)
+        strings = clean_strings
+    return strings
+
+
+def make_same_length(strings):
+    lengths = [len(string) for string in strings]
+    min_length = min(lengths)
+    diff_lengths = [length - min_length for length in lengths]
+    strings = [
+        (strings[i][:-diff_lengths[i]] if diff_lengths[i] != 0 else strings[i])
+        for i in range(len(lengths))]
+    return strings
+
+
+def clean_up_strings(strings: list) -> list:
+    strings = remove_unwanted_characters(strings, BASES)
+    strings = make_same_length(strings)
+    return strings
+
+
 if __name__ == '__main__':
-    instances = [
-        "CAAAACCCTCAAATACATTTTAGAAACACAATTTCAGGATATTAAAAGTTAAATTCATCTAGTTATACAA",
-        "TCTTTTCTGAATCTGAATAAATACTTTTATTCTGTAGATGGTGGCTGTAGGAATCTGTCACACAGCATGA",
-        "CCACGTGGTTAGTGGCAACCTGGTGACCCCCCTTCCTGTGATTTTTACAAATAGAGCAGCCGGCATCGTT",
-        "GGAGAGTGTTTTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
-        "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGGATAAGGAAACCAAGGCAATGAG"]
+    temp_instances = get_fasta_data_list('testdata_16S_RNA.FASTA')
+    instances = clean_up_strings(temp_instances)
+    # instances = [
+    #     "CAAAACCCTCAAATACATTTTAGAAACACAATTTCAGGATATTAAAAGTTAAATTCATCTAGTTATACAA",
+    #     "TCTTTTCTGAATCTGAATAAATACTTTTATTCTGTAGATGGTGGCTGTAGGAATCTGTCACACAGCATGA",
+    #     "CCACGTGGTTAGTGGCAACCTGGTGACCCCCCTTCCTGTGATTTTTACAAATAGAGCAGCCGGCATCGTT",
+    #     "GGAGAGTGTTTTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
+    #     "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGGATAAGGAAACCAAGGCAATGAG"]
     solution = "TATAAAAA"
     length = 8
     iterations = 10000
