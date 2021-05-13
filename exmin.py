@@ -3,7 +3,7 @@ from scoring import get_frequency_matrix
 import random
 
 EPS = 0.01
-BASES = 4
+BASES = 6
 
 def to_index(c):
     if c == 'A':
@@ -14,6 +14,10 @@ def to_index(c):
         return 2
     elif c == 'T':
         return 3
+    elif c == 'S':
+        return 4
+    elif c == 'N':
+        return 5
 
 def to_char(i):
     if i == 0:
@@ -24,6 +28,10 @@ def to_char(i):
         return 'G'
     elif i == 3:
         return 'T'
+    elif i == 4:
+        return 'S'
+    elif i == 5:
+        return 'N'
 
 def difference_in(p_old, p_new, motif_width):
     """
@@ -227,7 +235,7 @@ def find_motif_exmin(sequences, motif_width):
     starting_positions, motif_beliefs = exmin(sequences, motif_width)
     return get_motifs_from_sequences(sequences, starting_positions, motif_width)
 
-def best_of_exmin(sequences, motif_width, iterations=100):
+def best_of_exmin(sequences, motif_width, iterations=1000):
     """
     runs the EM algorithm multiple times and returns the best result, since EM is random
     :param sequences: the set of dna strings
@@ -250,14 +258,14 @@ def best_of_exmin(sequences, motif_width, iterations=100):
 if __name__ == '__main__':
     from pprint import pprint
 
-    sequences = ["CAAAACCCTCAAATACATTTTAGAAACACAATTTCAGGATATTAAAAGTTAAATTCATCTAGTTATACAA",
-                 "TCTTTTCTGAATCTGAATAAATACTTTTATTCTGTAGATGGTGGCTGTAGGAATCTGTCACACAGCATGA",
+    sequences = ["CAAAACCCTCAAATACATTTTAGAAACACAATTTCAGGATATTAAAAGTTAAATTCANSNSTCTAGTTATACAA",
+                 "TCTTTTCTGAATCTGAATAAATANSNSCTTTTATTCTGTAGATGGTGGCTGTAGGAATCTGTCACACAGCATGA",
                  "CCACGTGGTTAGTGGCAACCTGGTGACCCCCCTTCCTGTGATTTTTACAAATAGAGCAGCCGGCATCGTT",
-                 "GGAGAGTGTTTTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
+                 "GGAGAGTGTTTTTAAGAAGATGACTACAGTCAAACCAGGTACAGNSNSGATTCACACTCAGGGAACACGTGTGG",
                  "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGGATAAGGAAACCAAGGCAATGAG"]
 
     motifs = best_of_exmin(sequences, 8)
     pprint(motifs)
-    pprint(get_frequency_matrix(motifs))
+    # pprint(get_frequency_matrix(motifs))
 
 
