@@ -6,6 +6,7 @@ import time
 import numpy
 
 from exmin import find_motif_exmin, best_of_exmin
+from gibbs import gibbs_sample
 from scoring import get_motifs_score, get_total_motifs_score, \
     get_frequency_matrix, score_sum, get_motifs_percentage, \
     get_total_motifs_percentage
@@ -25,8 +26,10 @@ def get_value(value: tuple):
 
 def get_min_max_motifs(motifs_score):
     """
-    The function will calculate the minimal and maximal scores of all the motifs score that are created.
-    :param: motifs_score: This is a dict containing per possible motif a score that is on a logarithmic scale
+    The function will calculate the minimal and maximal scores of all the motifs
+    score that are created.
+    :param: motifs_score: This is a dict containing per possible motif a score
+    that is on a logarithmic scale
     :returns: The motif scores with minimum and maximum score
     """
     minimum = min(motifs_score.items(), key=get_value)
@@ -36,11 +39,12 @@ def get_min_max_motifs(motifs_score):
 
 def get_avg(motifs_score):
     """
-    This function will calculate the average of all the scores in the motifs score
-    dict. This is useful because we want to know what the average distance is between
-    all the possible motifs. If it is a small number it is a good indicator of getting
-    close to the real answer.
-    :param: motifs_score: This is a dict containing per possible motif a score that is on a logarithmic scale
+    This function will calculate the average of all the scores in the motifs
+    score dict. This is useful because we want to know what the average distance
+    is between all the possible motifs. If it is a small number it is a good
+    indicator of getting close to the real answer.
+    :param: motifs_score: This is a dict containing per possible motif a score
+    that is on a logarithmic scale
     :returns: The average score of all the possible motif score values
     """
     return numpy.average(list(motifs_score.values()))
@@ -48,11 +52,12 @@ def get_avg(motifs_score):
 
 def get_median(motifs_score):
     """
-    This function will calculate the median of all the scores in the motifs score
-    dict. This is useful because we want to know what the median distance is between
-    all the possible motifs. This is a slightly better indicator about where the other
-    halve is situated in the motif finding dict.
-    :param: motifs_score: This is a dict containing per possible motif a score that is on a logarithmic scale
+    This function will calculate the median of all the scores in the motifs
+    score dict. This is useful because we want to know what the median distance
+    is between all the possible motifs. This is a slightly better indicator
+    about where the other halve is situated in the motif finding dict.
+    :param: motifs_score: This is a dict containing per possible motif a score
+    that is on a logarithmic scale
     :returns: The median score of all the possible motif score values
     """
     return numpy.median(list(motifs_score.values()))
@@ -60,10 +65,12 @@ def get_median(motifs_score):
 
 def get_sd(motifs_score):
     """
-    This function will calculate the standard deviation of all the scores in the motifs score
-    dict. This is useful because we want to know how hard the different scores of motifs
-    differ from each other. The lower the better, and the more evenly distributed
-    :param: motifs_score: This is a dict containing per possible motif a score that is on a logarithmic scale
+    This function will calculate the standard deviation of all the scores in the
+    motifs score dict. This is useful because we want to know how hard the
+    different scores of motifs differ from each other. The lower the better, and
+    the more evenly distributed
+    :param: motifs_score: This is a dict containing per possible motif a score
+    that is on a logarithmic scale
     :returns: The standard deviation of all the possible motif score values
     """
     return numpy.std(list(motifs_score.values()))
@@ -106,6 +113,8 @@ def update_performance_dict(_performance_dict, motifs_score, total_motifs_score,
         motifs_score)
     _performance_dict[f'{prefix} Median of all the motif scores'] = get_median(
         motifs_score)
+    # If there is no mention of occurrences that need to be counted of the
+    # motifs in the sequences then skip this step
     if occurrences is not None:
         _performance_dict[
             f'{prefix} Count of occurrences of all motifs in all strings'] = occurrences
@@ -116,9 +125,10 @@ def get_log_relative_performance(_performance_dict, motifs):
     """
     This function will use the motifs that where found during
     the motif finding algorithm in log form, and generates data about it
-    :param: _performance_dict: The performance dict that needs to be filled with new
-    :param: motifs: The motifs from the generated solution, will be compared with
-    each other
+    :param: _performance_dict: The performance dict that needs to be filled with
+    new data
+    :param: motifs: The motifs from the generated solution, will be compared
+    with each other
     :returns: The dict filled with data about the performance relative to the
     motifs that were found
     """
@@ -133,9 +143,10 @@ def get_nolog_relative_performance(_performance_dict, motifs, instances):
     """
     This function will use the motifs that where found during
     the motif finding algorithm in percentage form, and generates data about it
-    :param: _performance_dict: The performance dict that needs to be filled with new
-    :param: motifs: The motifs from the generated solution, will be compared with
-    each other
+    :param: _performance_dict: The performance dict that needs to be filled with
+    new data
+    :param: motifs: The motifs from the generated solution, will be compared
+    with each other
     :returns: The dict filled with data about the performance relative to the
     motifs that were found
     """
@@ -163,6 +174,8 @@ def get_solution_relative_performance(_performance_dict, motifs, solution):
     # generate the matrix on which we'll perform some basic statistics
     scoring_matrix = get_frequency_matrix([solution])
     motifs_dict = dict()
+    # Calculate the scoring in the case of having a solution and compare to the
+    # solution
     for motif in motifs:
         motifs_dict[motif] = score_sum(motif, scoring_matrix)
     total_motifs_score = sum(list(motifs_dict.values()))
@@ -178,6 +191,8 @@ def get_general_performance(_performance_dict, time_start, resource):
     :param: _performance_dict: The performance dict that needs to be updated
     :param: time_start: The time that the algorithm started searching for motifs
     :param: resource: The resource that contains information about memory usage
+    :returns: The performance that has nothing to do with the results of the al-
+    gorithms run.
     """
     prefix = "\033[96mGeneral:\033[0m\033[32;1m"
     _performance_dict[f'{prefix} The time elapsed (s)'] = (
@@ -193,6 +208,9 @@ def get_performance(solution, func, *args, **kwargs) -> dict:
     statistics are: time elapsed, memory usage, score per motif, total score of
     motifs, minimum of score, maximum of score, average of all scores, standard
     deviation of scores, ... in dict form
+    :param: solution: The expected solution from the algorithm
+    :param: func: The function that needs to be benchmarked
+    :returns: Performance data about the algorithms run in dict form
     """
     time_start = time.perf_counter()
 
@@ -222,10 +240,10 @@ def print_performance(implementation_name, performance_dict):
     was passed through as a variable. The name of the implementation
     is the first argument, and the second argument must exist of a key
     with the explanation of the value connected to it.
-    :param: implementation_name: The name of the implementation to whom the performance
-    report belongs.
-    :param: performance_dict: All the performance data corresponding to the implementation that
-    was run for creating such a dict.
+    :param: implementation_name: The name of the implementation to whom the
+    performance report belongs.
+    :param: performance_dict: All the performance data corresponding to the
+    implementation that was run for creating such a dict.
     :returns: nothing
     """
     print(f"\033[36;1mPerformance statistics of {implementation_name}")
@@ -235,7 +253,11 @@ def print_performance(implementation_name, performance_dict):
 
 def create_performance_sheet(file_name, performance_dict):
     """
-
+    This will create a performance sheet and will append the data from the
+    performance dict to a file with a file_name
+    :param: file_name: The filename to which we need to write the csv
+    :param: performance_dict: The data that needs to be included in the csv
+    :returns: nothing
     """
     with open(file_name, 'a+', newline='') as csvfile:
         filewriter = csv.writer(csvfile, delimiter=',',
@@ -244,6 +266,13 @@ def create_performance_sheet(file_name, performance_dict):
 
 
 def get_fasta_data_list(file_name) -> list:
+    """
+    This will create a list of all the DNA sequences in the file which should
+    be in FASTA format.
+    :param: file_name: The file name of the file which should contain the FASTA
+    data
+    :returns: The DNA sequences in string format in a list
+    """
     # Opens the file
     with open(file_name) as f:
         lines = f.readlines()
@@ -268,19 +297,36 @@ def get_fasta_data_list(file_name) -> list:
 
 
 def remove_unwanted_characters(strings, whitelist):
+    """
+    Remove all the characters that are not in the whitelist of characters from
+    the strings
+    :param: strings: the strings that need to be cleaned up
+    :param: whitelist: the whitelist of characters allowed in the strings
+    :returns: strings with only elements from the whitelist
+    """
     changed = [True] * len(strings)
+    # Check if one of the strings has been cleaned if not then we can return
+    # otherwise we need to do another iteration
     while max(changed):
         clean_strings = []
+        # This will iterate over all the strings and put the changed to false
         for i in range(len(strings)):
             string = strings[i]
             changed[i] = False
             clean_string = string
+            # Iterate over every letter in the string and check for it in the
+            # whitelist, if it is not in the whitelist then replace the string
+            # and then leave the for loop in order to go to the next string.
+            # Because it is possible we will encounter this character multiple
+            # times in the string, and the original iterator over the string
+            # will not be in the correct place of the string.
             for letter in string:
-                if letter not in whitelist:
-                    clean_string = string.replace(letter, '')
-                    clean_strings.append(clean_string)
-                    changed[i] = True
-                    break
+                if letter in whitelist:
+                    continue
+                clean_string = string.replace(letter, '')
+                clean_strings.append(clean_string)
+                changed[i] = True
+                break
             if not changed[i]:
                 clean_strings.append(clean_string)
         strings = clean_strings
@@ -288,9 +334,20 @@ def remove_unwanted_characters(strings, whitelist):
 
 
 def make_same_length(strings):
+    """
+    It will make the strings that are passed through in list form of the same
+    length. It does this by taking the shortest list.
+    :param: strings: the strings that need to be made the same length
+    :returns: strings of the same length
+    """
+    # Fetch the lengths of each string
     lengths = [len(string) for string in strings]
+    # Take the minimal length string
     min_length = min(lengths)
+    # Calculate the difference for each length of string with the lowest string
+    # length
     diff_lengths = [length - min_length for length in lengths]
+    # cut the last part of the string based on the string lenght difference
     strings = [
         (strings[i][:-diff_lengths[i]] if diff_lengths[i] != 0 else strings[i])
         for i in range(len(lengths))]
@@ -298,6 +355,13 @@ def make_same_length(strings):
 
 
 def clean_up_strings(strings: list) -> list:
+    """
+    This function will remove the characters that are not in BASES. After this
+    it will make the strings the same length. Both of these parts are necessary
+    for running both implemented algorithms
+    :param: strings: The strings that need to be cleaned up
+    :returns: Strings of the same length and with only elements in BASES
+    """
     strings = remove_unwanted_characters(strings, BASES)
     strings = make_same_length(strings)
     return strings
@@ -316,16 +380,16 @@ if __name__ == '__main__':
     length = 8
     iterations = 10000
 
-    # gibbs_performance_dict = get_performance(solution, gibbs_sample, instances,
-    #                                          length)
-    # print_performance("Gibbs", gibbs_performance_dict)
-    # create_performance_sheet('G.csv', em_dict)
+    gibbs_performance_dict = get_performance(solution, gibbs_sample, instances,
+                                             length)
+    print_performance("Gibbs", gibbs_performance_dict)
+    create_performance_sheet('G.csv', gibbs_performance_dict)
     #
     # best_of_gibbs_performance_dict = get_performance(solution, best_of_gibbs,
     #                                                  instances, length,
     #                                                  iterations)
     # print_performance("Best of gibbs", best_of_gibbs_performance_dict)
-    # create_performance_sheet('BOG.csv', em_dict)
+    # create_performance_sheet('BOG.csv', best_of_gibbs_performance_dict)
 
     em_dict = get_performance(solution, find_motif_exmin, instances, length)
 
