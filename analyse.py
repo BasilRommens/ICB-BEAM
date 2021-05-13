@@ -80,8 +80,18 @@ def get_memory_usage_mb(resource):
     return memory_usage
 
 
+def count_occurrences(instances, motifs):
+    ret_dict = dict()
+    for motif in motifs:
+        count = 0
+        for instance in instances:
+            count += instance.count(motif)
+        ret_dict[motif] = count
+    return ret_dict
+
+
 def update_performance_dict(_performance_dict, motifs_score, total_motifs_score,
-                            prefix):
+                            prefix, occurrences=None):
     _performance_dict[
         f'{prefix} The motifs scores'] = motifs_score
     _performance_dict[
@@ -96,6 +106,9 @@ def update_performance_dict(_performance_dict, motifs_score, total_motifs_score,
         motifs_score)
     _performance_dict[f'{prefix} Median of all the motif scores'] = get_median(
         motifs_score)
+    if occurrences is not None:
+        _performance_dict[
+            f'{prefix} Count of occurrences of all motifs in all strings'] = occurrences
     return _performance_dict
 
 
@@ -116,7 +129,7 @@ def get_log_relative_performance(_performance_dict, motifs):
                                    total_motifs_score, prefix)
 
 
-def get_nolog_relative_performance(_performance_dict, motifs):
+def get_nolog_relative_performance(_performance_dict, motifs, instances):
     """
     This function will use the motifs that where found during
     the motif finding algorithm in percentage form, and generates data about it
@@ -129,8 +142,9 @@ def get_nolog_relative_performance(_performance_dict, motifs):
     prefix = "\033[96mNolog:\033[0m\033[32;1m"
     motifs_percentage = get_motifs_percentage(motifs)
     total_motifs_percentage = get_total_motifs_percentage(motifs)
+    occurrences = count_occurrences(instances, motifs)
     return update_performance_dict(_performance_dict, motifs_percentage,
-                                   total_motifs_percentage, prefix)
+                                   total_motifs_percentage, prefix, occurrences)
 
 
 def get_solution_relative_performance(_performance_dict, motifs, solution):
@@ -189,7 +203,8 @@ def get_performance(solution, func, *args, **kwargs) -> dict:
                                                resource)
 
     # This part is when we do not have a solution
-    performance_dict = get_nolog_relative_performance(performance_dict, motifs)
+    performance_dict = get_nolog_relative_performance(performance_dict, motifs,
+                                                      instances)
     performance_dict = get_log_relative_performance(performance_dict, motifs)
 
     # Perform this part only when there is a solution known
