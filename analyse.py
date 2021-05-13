@@ -1,10 +1,10 @@
 # Compares the performance of gibbs with exmin
+import csv
 import resource
 import time
 
 import numpy
 
-from gibbs import gibbs_sample, best_of_gibbs
 from exmin import find_motif_exmin, best_of_exmin
 from scoring import get_motifs_score, get_total_motifs_score, \
     get_frequency_matrix, score_sum, get_motifs_percentage, \
@@ -216,6 +216,16 @@ def print_performance(implementation_name, performance_dict):
         print(f"\033[32;1m{item[0]}: \033[0m\033[3m{item[1]}\033[0m")
 
 
+def create_performance_sheet(file_name, performance_dict):
+    """
+
+    """
+    with open(file_name, 'a+', newline='') as csvfile:
+        filewriter = csv.writer(csvfile, delimiter=',',
+                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        filewriter.writerow(list(performance_dict.values()))
+
+
 if __name__ == '__main__':
     instances = [
         "CAAAACCCTCAAATACATTTTAGAAACACAATTTCAGGATATTAAAAGTTAAATTCATCTAGTTATACAA",
@@ -230,17 +240,22 @@ if __name__ == '__main__':
     # gibbs_performance_dict = get_performance(solution, gibbs_sample, instances,
     #                                          length)
     # print_performance("Gibbs", gibbs_performance_dict)
+    # create_performance_sheet('G.csv', em_dict)
     #
     # best_of_gibbs_performance_dict = get_performance(solution, best_of_gibbs,
     #                                                  instances, length,
     #                                                  iterations)
     # print_performance("Best of gibbs", best_of_gibbs_performance_dict)
+    # create_performance_sheet('BOG.csv', em_dict)
 
     em_dict = get_performance(solution, find_motif_exmin, instances, length)
 
     print_performance("Expectation minimization", em_dict)
+    create_performance_sheet('EM.csv', em_dict)
 
     best_of_em_performance_dict = get_performance(solution, best_of_exmin,
                                                   instances, length,
                                                   iterations)
-    print_performance("Best of expectation minimization", best_of_em_performance_dict)
+    print_performance("Best of expectation minimization",
+                      best_of_em_performance_dict)
+    create_performance_sheet('BOEM.csv', best_of_em_performance_dict)
