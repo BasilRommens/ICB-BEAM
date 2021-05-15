@@ -3,7 +3,7 @@ import random
 
 from scoring import get_frequency_matrix
 
-EPS = 0.01
+EPS = 1
 BASES = 4
 
 
@@ -233,7 +233,7 @@ def find_motif_exmin(sequences, motif_width):
     return get_motifs_from_sequences(sequences, starting_positions,
                                      motif_width), count
 
-def best_of_exmin(sequences, motif_width, iterations=100):
+def best_of_exmin(sequences, motif_width, iterations=10):
     """
     runs the EM algorithm multiple times and returns the best result, since EM is random
     :param sequences: the set of dna strings
