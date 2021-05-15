@@ -232,7 +232,7 @@ def find_motif_exmin(sequences, motif_width):
     return get_motifs_from_sequences(sequences, starting_positions,
                                      motif_width), count
 
-def best_of_exmin(sequences, motif_width, iterations=1):
+def best_of_exmin(sequences, motif_width, iterations=10):
     """
     runs the EM algorithm multiple times and returns the best result, since EM is random
     :param sequences: the set of dna strings
@@ -258,12 +258,13 @@ def best_of_exmin(sequences, motif_width, iterations=1):
 if __name__ == '__main__':
     from pprint import pprint
 
-    sequences = ["AGTA",
-                 "GTCC",
-                 "AGTG",
-                 "TGTT",]
+    sequences = ["CAAAACCCTCAAATACATTTTAGAAACACAATTTCAGGATATTAAAAGTTAAATTCATCTAGTTATACAA",
+                 "TCTTTTCTGAATCTGAATAAATACTTTTATTCTGTAGATGGTGGCTGTAGGAATCTGTCACACAGCATGA",
+                 "CCACGTGGTTAGTGGCAACCTGGTGACCCCCCTTCCTGTGATTTTTACAAATAGAGCAGCCGGCATCGTT",
+                 "GGAGAGTGTTTTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
+                 "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGGATAAGGAAACCAAGGCAATGAG"]
 
-    motifs, count = best_of_exmin(sequences, 2)
+    motifs, count = best_of_exmin(sequences, 8)
     pprint(motifs)
     pprint(get_frequency_matrix(motifs))
 
