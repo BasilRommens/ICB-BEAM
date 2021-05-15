@@ -144,13 +144,13 @@ def do_maximization(sequences, hidden_variables, motif_width):
     new_beliefs = list()
     for i in range(BASES):
         new_row = list()
-        denominator = 0
         for k in range(motif_width + 1):
             nominator = count_occurences(sequences, hidden_variables, motif_width, to_char(i), k) + 1 # plus one is a pseudocounter
-            denominator += nominator
-            new_row.append(nominator)
-        # denominator can never be zero because of the psuedocounters
-        new_beliefs.append([nominator/denominator for nominator in new_row])
+            denominator = 0
+            for b in range(BASES):
+                denominator += count_occurences(sequences, hidden_variables, motif_width, to_char(b), k) + 1
+            new_row.append(nominator/denominator)
+        new_beliefs.append(new_row)
     return new_beliefs
 
 def score_motif(sequences, starting_positions, motif):
@@ -259,13 +259,12 @@ def best_of_exmin(sequences, motif_width, iterations=100):
 if __name__ == '__main__':
     from pprint import pprint
 
-    sequences = ["CAAAACCCTCAAATACATTTTAGAAACACAATTTCAGGATATTAAAAGTTAAATTCATCTAGTTATACAA",
-                 "TCTTTTCTGAATCTGAATAAATACTTTTATTCTGTAGATGGTGGCTGTAGGAATCTGTCACACAGCATGA",
-                 "CCACGTGGTTAGTGGCAACCTGGTGACCCCCCTTCCTGTGATTTTTACAAATAGAGCAGCCGGCATCGTT",
-                 "GGAGAGTGTTTTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
-                 "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGGATAAGGAAACCAAGGCAATGAG"]
+    sequences = ["AGTA",
+                 "GTCC",
+                 "AGTG",
+                 "TGTT",]
 
-    motifs, count = best_of_exmin(sequences, 8)
+    motifs, count = best_of_exmin(sequences, 2)
     pprint(motifs)
     pprint(get_frequency_matrix(motifs))
 
