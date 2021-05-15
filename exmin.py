@@ -3,7 +3,7 @@ import random
 
 from scoring import get_frequency_matrix
 
-EPS = 0.000001
+EPS = 0.01
 BASES = 4
 
 
@@ -95,7 +95,7 @@ def do_expectation(sequences: list, beliefs: list, motif_width: int):
         for j in range(len(sequence) - motif_width + 1):
             value = prob_sequence_motif(sequence, j, beliefs, motif_width)
             new_row.append(value)
-            if j > 0: row_total += value
+            row_total += value
         # normalize, we assume that it is equally likely that the motif will start in any position
         if row_total != 0:
             new_hidden_variables.append([value/row_total for value in new_row])
@@ -212,6 +212,7 @@ def exmin(sequences, motif_width, count=0):
     :return: the probabilities of the hidden variables and the belief matrix
     """
     old_beliefs = initialize_beliefs(motif_width)
+    # old_beliefs = [[0.2, 0.3, 0.1], [0.3, 0.2, 0], [0.4, 0.5, 0.7], [0.1, 0.1, 0.2]]
     while True:
         count += 1
         hidden_variables = do_expectation(sequences, old_beliefs, motif_width)
