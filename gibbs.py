@@ -1,8 +1,8 @@
 # Implementation of the gibbs sampling algorithm
 import time
-
-from random import randint
 from copy import copy
+from random import randint
+
 from scoring import get_scoring_matrix, score_pssm_log, get_frequency_matrix
 
 # Set the time out constant to 1
@@ -70,7 +70,7 @@ def get_new_position(index, motif_positions, instances, motif_length):
     return best_position
 
 
-def gibbs_sample(instances, motif_length):
+def gibbs_sample(instances, motif_length, count=0):
     """
     Finds a motif that's present in all instances
     WARNING: Gibbs sampling is based on random start positions, so the result can change every time you run the code
@@ -91,6 +91,7 @@ def gibbs_sample(instances, motif_length):
 
     time_start = time.perf_counter()
     while positions_changed:
+        count += 1
         old_positions = copy(motif_positions)
 
         for i in range(len(instances)):
@@ -103,7 +104,7 @@ def gibbs_sample(instances, motif_length):
         if time_elapsed > TIME_OUT:
             raise Exception("\033[1;93mTimed out!\033[0m")
 
-    return get_motifs(motif_positions, instances, motif_length)
+    return get_motifs(motif_positions, instances, motif_length), count
 
 
 def most_occuring(item_list):
@@ -119,13 +120,14 @@ def best_of_gibbs(instances, motif_length, num_iterations=10):
     ['GT', 'GT', 'GT', 'GT']
     """
     gibs_results = []
+    count = 0
     for _ in range(num_iterations):
         try:
-            gibbs_result = gibbs_sample(instances, motif_length)
+            gibbs_result, count = gibbs_sample(instances, motif_length, count)
             gibs_results.append(gibbs_result)
         except Exception as e:
             print(e)
-    return most_occuring(gibs_results)
+    return most_occuring(gibs_results), count
 
 
 if __name__ == '__main__':

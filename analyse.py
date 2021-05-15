@@ -6,7 +6,7 @@ import time
 import numpy
 
 from exmin import find_motif_exmin, best_of_exmin
-from gibbs import gibbs_sample
+from gibbs import gibbs_sample, best_of_gibbs
 from scoring import get_motifs_score, get_total_motifs_score, \
     get_frequency_matrix, score_sum, get_motifs_percentage, \
     get_total_motifs_percentage
@@ -90,10 +90,10 @@ def get_memory_usage_mb(resource):
 def count_occurrences(instances, motifs):
     ret_dict = dict()
     for motif in motifs:
-        count = 0
+        single_count = 0
         for instance in instances:
-            count += instance.count(motif)
-        ret_dict[motif] = count
+            single_count += 1 if instance.count(motif) else 0
+        ret_dict[motif] = single_count
     return ret_dict
 
 
@@ -183,7 +183,7 @@ def get_solution_relative_performance(_performance_dict, motifs, solution):
                                    total_motifs_score, prefix)
 
 
-def get_general_performance(_performance_dict, time_start, resource):
+def get_general_performance(_performance_dict, time_start, resource, count):
     """
     This function will update the dict with a general inforrmation about the
     performance of the function. It reports the total runtime of the function
@@ -199,6 +199,7 @@ def get_general_performance(_performance_dict, time_start, resource):
             time.perf_counter() - time_start)
     _performance_dict[f'{prefix} Memory used (Mb)'] = get_memory_usage_mb(
         resource)
+    _performance_dict[f'{prefix} Amount of iterations'] = count
     return _performance_dict
 
 
@@ -214,11 +215,11 @@ def get_performance(solution, func, *args, **kwargs) -> dict:
     """
     time_start = time.perf_counter()
 
-    motifs = func(*args, **kwargs)
+    motifs, count = func(*args, **kwargs)
     performance_dict = dict()
     # This part works for both parts described below
     performance_dict = get_general_performance(performance_dict, time_start,
-                                               resource)
+                                               resource, count)
 
     # This part is when we do not have a solution
     performance_dict = get_nolog_relative_performance(performance_dict, motifs,
@@ -368,7 +369,7 @@ def clean_up_strings(strings: list) -> list:
 
 
 if __name__ == '__main__':
-    temp_instances = get_fasta_data_list('testdata_16S_RNA.FASTA')
+    temp_instances = get_fasta_data_list('testdata_16S_RNA_benoemd.FASTA')
     instances = clean_up_strings(temp_instances)
     # instances = [
     #     "CAAAACCCTCAAATACATTTTAGAAACACAATTTCAGGATATTAAAAGTTAAATTCATCTAGTTATACAA",
@@ -376,29 +377,50 @@ if __name__ == '__main__':
     #     "CCACGTGGTTAGTGGCAACCTGGTGACCCCCCTTCCTGTGATTTTTACAAATAGAGCAGCCGGCATCGTT",
     #     "GGAGAGTGTTTTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
     #     "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGGATAAGGAAACCAAGGCAATGAG"]
-    solution = "TATAAAAA"
-    length = 8
-    iterations = 10000
+    print(len(instances[0]))
+    solution = None  # "TATAAAAA"
+    # Variables to turn on and off running parts of the algorithm
+    g = True
+    bog = True
+    em = True
+    boem = True
+    # Amount of runs
+    runs = 5
+    for length in range(10, 21, 10):
+        for _ in range(runs):
+            iterations = 50
 
-    gibbs_performance_dict = get_performance(solution, gibbs_sample, instances,
-                                             length)
-    print_performance("Gibbs", gibbs_performance_dict)
-    create_performance_sheet('G.csv', gibbs_performance_dict)
-    #
-    # best_of_gibbs_performance_dict = get_performance(solution, best_of_gibbs,
-    #                                                  instances, length,
-    #                                                  iterations)
-    # print_performance("Best of gibbs", best_of_gibbs_performance_dict)
-    # create_performance_sheet('BOG.csv', best_of_gibbs_performance_dict)
+            if g:
+                gibbs_performance_dict = get_performance(solution, gibbs_sample,
+                                                         instances,
+                                                         length)
+                print_performance("Gibbs", gibbs_performance_dict)
+                create_performance_sheet('G.csv', gibbs_performance_dict)
 
-    em_dict = get_performance(solution, find_motif_exmin, instances, length)
+            if bog:
+                best_of_gibbs_performance_dict = get_performance(solution,
+                                                                 best_of_gibbs,
+                                                                 instances,
+                                                                 length,
+                                                                 iterations)
+                print_performance("Best of gibbs",
+                                  best_of_gibbs_performance_dict)
+                create_performance_sheet('BOG.csv',
+                                         best_of_gibbs_performance_dict)
 
-    print_performance("Expectation minimization", em_dict)
-    create_performance_sheet('EM.csv', em_dict)
+            if em:
+                em_dict = get_performance(solution, find_motif_exmin, instances,
+                                          length)
 
-    best_of_em_performance_dict = get_performance(solution, best_of_exmin,
-                                                  instances, length,
-                                                  iterations)
-    print_performance("Best of expectation minimization",
-                      best_of_em_performance_dict)
-    create_performance_sheet('BOEM.csv', best_of_em_performance_dict)
+                print_performance("Expectation minimization", em_dict)
+                create_performance_sheet('EM.csv', em_dict)
+
+            if boem:
+                best_of_em_performance_dict = get_performance(solution,
+                                                              best_of_exmin,
+                                                              instances, length,
+                                                              iterations)
+                print_performance("Best of expectation minimization",
+                                  best_of_em_performance_dict)
+                create_performance_sheet('BOEM.csv',
+                                         best_of_em_performance_dict)

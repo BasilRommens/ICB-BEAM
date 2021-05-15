@@ -1,9 +1,11 @@
 # Implementation of the expectation min motif finding algorithm
-from scoring import get_frequency_matrix
 import random
 
-EPS = 0.01
+from scoring import get_frequency_matrix
+
+EPS = 0.000001
 BASES = 4
+
 
 def to_index(c):
     if c == 'A':
@@ -201,7 +203,8 @@ def get_motifs_from_sequences(sequences, starting_positions, motif_width, verbos
         if verbose: print(motif)
     return motifs
 
-def exmin(sequences, motif_width):
+
+def exmin(sequences, motif_width, count=0):
     """
     run the expectation minimization algorithm until the change in beliefs is smaller than EPS
     :param sequences: the set of dna strings
@@ -210,12 +213,13 @@ def exmin(sequences, motif_width):
     """
     old_beliefs = initialize_beliefs(motif_width)
     while True:
+        count += 1
         hidden_variables = do_expectation(sequences, old_beliefs, motif_width)
         new_beliefs = do_maximization(sequences, hidden_variables, motif_width)
-        if difference_in(old_beliefs, new_beliefs, motif_width) < EPS:
+        if difference_in(old_beliefs, new_beliefs, motif_width) > EPS:
             old_beliefs = new_beliefs
         else:
-            return hidden_variables, new_beliefs
+            return hidden_variables, new_beliefs, count
 
 def find_motif_exmin(sequences, motif_width):
     """
@@ -224,8 +228,9 @@ def find_motif_exmin(sequences, motif_width):
     :param motif_width: the length for the motif
     :return: list of the motifs found by EM
     """
-    starting_positions, motif_beliefs = exmin(sequences, motif_width)
-    return get_motifs_from_sequences(sequences, starting_positions, motif_width)
+    starting_positions, motif_beliefs, count = exmin(sequences, motif_width)
+    return get_motifs_from_sequences(sequences, starting_positions,
+                                     motif_width), count
 
 def best_of_exmin(sequences, motif_width, iterations=100):
     """
@@ -237,15 +242,18 @@ def best_of_exmin(sequences, motif_width, iterations=100):
     """
     max_score = 0
     best_motifs = list()
+    count = 0
     for _ in range(iterations):
-        starting_positions, motif_beliefs = exmin(sequences, motif_width)
-        found_motifs = get_motifs_from_sequences(sequences, starting_positions, motif_width)
+        starting_positions, motif_beliefs, count = exmin(sequences, motif_width,
+                                                         count)
+        found_motifs = get_motifs_from_sequences(sequences, starting_positions,
+                                                 motif_width)
         most_likely_motif = get_motif_from_beliefs(motif_beliefs, motif_width)
         score = score_motif(sequences, starting_positions, most_likely_motif)
         if score > max_score:
             max_score = score
             best_motifs = found_motifs
-    return best_motifs
+    return best_motifs, count
 
 if __name__ == '__main__':
     from pprint import pprint
@@ -256,7 +264,7 @@ if __name__ == '__main__':
                  "GGAGAGTGTTTTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
                  "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGGATAAGGAAACCAAGGCAATGAG"]
 
-    motifs = best_of_exmin(sequences, 8)
+    motifs, count = best_of_exmin(sequences, 8)
     pprint(motifs)
     pprint(get_frequency_matrix(motifs))
 
