@@ -212,7 +212,6 @@ def exmin(sequences, motif_width, count=0):
     :return: the probabilities of the hidden variables and the belief matrix
     """
     old_beliefs = initialize_beliefs(motif_width)
-    # old_beliefs = [[0.2, 0.3, 0.1], [0.3, 0.2, 0], [0.4, 0.5, 0.7], [0.1, 0.1, 0.2]]
     while True:
         count += 1
         hidden_variables = do_expectation(sequences, old_beliefs, motif_width)
@@ -233,7 +232,7 @@ def find_motif_exmin(sequences, motif_width):
     return get_motifs_from_sequences(sequences, starting_positions,
                                      motif_width), count
 
-def best_of_exmin(sequences, motif_width, iterations=10):
+def best_of_exmin(sequences, motif_width, iterations=1):
     """
     runs the EM algorithm multiple times and returns the best result, since EM is random
     :param sequences: the set of dna strings
