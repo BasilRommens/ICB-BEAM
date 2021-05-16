@@ -87,13 +87,17 @@ def get_memory_usage_mb(resource):
     return memory_usage
 
 
+def count_occurrence(instances, motif):
+    single_count = 0
+    for instance in instances:
+        single_count += 1 if instance.count(motif) else 0
+    return single_count
+
+
 def count_occurrences(instances, motifs):
     ret_dict = dict()
     for motif in motifs:
-        single_count = 0
-        for instance in instances:
-            single_count += 1 if instance.count(motif) else 0
-        ret_dict[motif] = single_count
+        ret_dict[motif] = count_occurrence(instances, motif)
     return ret_dict
 
 
@@ -203,7 +207,7 @@ def get_general_performance(_performance_dict, time_start, resource, count):
     return _performance_dict
 
 
-def get_performance(solution, func, *args, **kwargs) -> dict:
+def get_performance(solution, instances, func, *args, **kwargs) -> dict:
     """
     Will return a bunch of statistics about the found solution. Among these
     statistics are: time elapsed, memory usage, score per motif, total score of
@@ -293,7 +297,6 @@ def get_fasta_data_list(file_name) -> list:
                 continue
             ret_list.append(sequence)
             sequence = ""
-            continue
     return ret_list
 
 
@@ -368,8 +371,8 @@ def clean_up_strings(strings: list) -> list:
     return strings
 
 
-if __name__ == '__main__':
-    temp_instances = get_fasta_data_list('testdata_16S_RNA_benoemd.FASTA')
+def process_data(data_file_name, solution, runs, active_algo):
+    temp_instances = get_fasta_data_list(data_file_name)
     instances = clean_up_strings(temp_instances)
     # instances = [
     #     "CAAAACCCTCAAATACATTTTAGAAACACAATTTCAGGATATTAAAAGTTAAATTCATCTAGTTATACAA",
@@ -378,27 +381,22 @@ if __name__ == '__main__':
     #     "GGAGAGTGTTTTTAAGAAGATGACTACAGTCAAACCAGGTACAGGATTCACACTCAGGGAACACGTGTGG",
     #     "TCACCATCAAACCTGAATCAAGGCAATGAGCAGGTATACATAGCCTGGATAAGGAAACCAAGGCAATGAG"]
     print(len(instances[0]))
-    solution = None  # "TATAAAAA"
-    # Variables to turn on and off running parts of the algorithm
-    g = True
-    bog = True
-    em = True
-    boem = True
-    # Amount of runs
-    runs = 5
+
     for length in range(10, 21, 10):
         for _ in range(runs):
             iterations = 50
 
-            if g:
-                gibbs_performance_dict = get_performance(solution, gibbs_sample,
+            if active_algo[0]:
+                gibbs_performance_dict = get_performance(solution, instances,
+                                                         gibbs_sample,
                                                          instances,
                                                          length)
                 print_performance("Gibbs", gibbs_performance_dict)
                 create_performance_sheet('G.csv', gibbs_performance_dict)
 
-            if bog:
+            if active_algo[1]:
                 best_of_gibbs_performance_dict = get_performance(solution,
+                                                                 instances,
                                                                  best_of_gibbs,
                                                                  instances,
                                                                  length,
@@ -408,15 +406,17 @@ if __name__ == '__main__':
                 create_performance_sheet('BOG.csv',
                                          best_of_gibbs_performance_dict)
 
-            if em:
-                em_dict = get_performance(solution, find_motif_exmin, instances,
+            if active_algo[2]:
+                em_dict = get_performance(solution, instances, find_motif_exmin,
+                                          instances,
                                           length)
 
                 print_performance("Expectation minimization", em_dict)
                 create_performance_sheet('EM.csv', em_dict)
 
-            if boem:
+            if active_algo[3]:
                 best_of_em_performance_dict = get_performance(solution,
+                                                              instances,
                                                               best_of_exmin,
                                                               instances, length,
                                                               iterations)
@@ -424,3 +424,13 @@ if __name__ == '__main__':
                                   best_of_em_performance_dict)
                 create_performance_sheet('BOEM.csv',
                                          best_of_em_performance_dict)
+
+
+if __name__ == '__main__':
+    solution = None  # "TATAAAAA"
+    # Variables to turn on and off running parts of the algorithm
+    active_algo = [True, True, True, True]
+    # Amount of runs
+    runs = 5
+    process_data("testdata_16S_RNA.FASTA", solution, runs, active_algo)
+    # process_data("testdata_16S_RNA_benoemd.FASTA", solution, runs, active_algo)
